@@ -9,8 +9,13 @@ public:
 	Image image;//сфмл изображение
 	Texture texture;//сфмл текстура
 	Sprite sprite;//сфмл спрайт
+	bool del = false;
+	bool otrisovka = true;
+	String t;
+	int BB = 0;
 
-	Player(String F, float X, float Y, float W, float H){  //Конструктор с параметрами(формальными) для класса Player. При создании объекта класса мы будем задавать имя файла, координату Х и У, ширину и высоту
+	Player(String F, float X, float Y, float W, float H,String T){  //Конструктор с параметрами(формальными) для класса Player. При создании объекта класса мы будем задавать имя файла, координату Х и У, ширину и высоту
+		t = T;
 		File = F;//имя файла+расширение
 		w = W; h = H;//высота и ширина
 		image.loadFromFile("images/" + File);//запихиваем в image наше изображение вместо File мы передадим то, что пропишем при создании объекта. В нашем случае "hero.png" и получится запись идентичная 	image.loadFromFile("images/hero/png");

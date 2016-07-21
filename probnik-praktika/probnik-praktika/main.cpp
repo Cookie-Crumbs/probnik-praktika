@@ -1,24 +1,42 @@
 #include <SFML/Graphics.hpp>
+#include <Box2D/Box2D.h>
 #include <map> 
+#include <vector>
 #include <iostream>
 #include <cstdlib>
+#include<cmath>
 #include "spr.h"
 
 using namespace std;
 using namespace sf;
 
+const  float SCALE = 30.f; //пиксельки
+const float DEG = 57.29599f; //градусы
+b2Vec2 Gravity(0.f, 9.8f);
+b2World World(Gravity);
+
+//карта
+//переотрисовка+б2_тел 
+//считывание координат
+//считывание соединений
+//добавить поворот спрайта
+
+void setWall(int x, int y, int w, int h);
+
 int main()
 {
 	sf::RenderWindow window(sf::VideoMode(980, 500), "probnik-praktica");
+	bool sozdanie = true;
 
 	//контейнер details - хранит в себе все созданные детали
-	map<int, Player> details; 
-	int count = 0, N=0;//количество деталей
-
-	Player KV1("kv1.png", 75, 56, 127.0, 127.0);
-	Player KR1("kr1.png", 75, 56, 102.0, 102.0);
-	Player Z1("z1.png", 75, 56, 25.0, 25.0);
+	map<int, Player> details;
+	int count = 0, N = 0, D=0,X,ud=0;//количество деталей
 	
+
+	Player KV1("kv1.png", 75, 56, 127.0, 127.0,"kv1");
+	Player KR1("kr1.png", 75, 56, 102.0, 102.0,"kr1");
+	Player Z1("z1.png", 75, 56, 25.0, 25.0,"z1");
+
 	Clock clock; //создаем переменную времени
 	bool isMove = false;//переменная для щелчка мыши по спрайту
 	float dX = 0;//корректировка движения по х
@@ -27,61 +45,83 @@ int main()
 	Texture fon1;
 	fon1.loadFromFile("images/fon.png");
 	Sprite fon(fon1);
-    
+
+	Texture fon_2;
+	fon_2.loadFromFile("images/fon2.png");
+	Sprite fon2(fon_2);
+	bool f2 = true;
+
 	//контейнер ico - 3 спрайта иконки (круг, квадрат, соединение)
-	Texture icokv1, icokr1, icoz1;
+	Texture icokv1, icokr1, icoz1, icoc;
 	icokv1.loadFromFile("images/ico_kv1.png");
 	icokr1.loadFromFile("images/ico_kr1.png");
 	icoz1.loadFromFile("images/ico_z1.png");
-	Sprite ico_kv1(icokv1), ico_kr1(icokr1), ico_z1(icoz1);
-	ico_kv1.setPosition(821, 89); 
+	icoc.loadFromFile("images/ico_con.png");
+	Sprite ico_kv1(icokv1), ico_kr1(icokr1), ico_z1(icoz1), ico_c(icoc);
+	ico_kv1.setPosition(821, 89);
 	ico_kr1.setPosition(821, 193);
 	ico_z1.setPosition(829, 309);
-	
+	ico_c.setPosition(795, 390);
+
 	while (window.isOpen())
 	{
-		float time = clock.getElapsedTime().asMicroseconds(); //дать прошедшее время в микросекундах
-		clock.restart(); //перезагружает время
-		time = time / 800; //скорость игры
+		if (sozdanie == true){
+			float time = clock.getElapsedTime().asMicroseconds(); //дать прошедшее время в микросекундах
+			clock.restart(); //перезагружает время
+			time = time / 800; //скорость игры
 
-		Vector2i pixelPos = Mouse::getPosition(window);//забираем коорд курсора
-		Vector2f pos = window.mapPixelToCoords(pixelPos);//переводим их в игровые (уходим от коорд окна)
+			Vector2i pixelPos = Mouse::getPosition(window);//забираем коорд курсора
+			Vector2f pos = window.mapPixelToCoords(pixelPos);//переводим их в игровые (уходим от коорд окна)
 
-		sf::Event event;
-		while (window.pollEvent(event))
-		{
-			if (event.type == sf::Event::Closed)
-				window.close();
+			sf::Event event;
+			while (window.pollEvent(event))
+			{
+				if (event.type == sf::Event::Closed)
+					window.close();
 
-			/*-----------жмем по иконкам--------------------------------------------------------------------------------*/
-			if (event.type == Event::MouseButtonPressed)//если нажата клавиша мыши
-				if (event.key.code == Mouse::Left)//а именно левая
-				{
-					if (ico_kv1.getGlobalBounds().contains(pos.x, pos.y)){//и при этом координата курсора попадает в спрайт
-						count++;
-						details.insert(pair<int, Player>(count, KV1));						
+				/*-----------жмем по иконкам--------------------------------------------------------------------------------*/
+				if (event.type == Event::MouseButtonPressed)//если нажата клавиша мыши
+					if (event.key.code == Mouse::Left)//а именно левая
+					{
+						if (ico_kv1.getGlobalBounds().contains(pos.x, pos.y)){//и при этом координата курсора попадает в спрайт
+							count++;
+							details.insert(pair<int, Player>(count, KV1));
+						}
+						else if (ico_kr1.getGlobalBounds().contains(pos.x, pos.y)){
+							count++;
+							details.insert(pair<int, Player>(count, KR1));
+						}
+						else if (ico_z1.getGlobalBounds().contains(pos.x, pos.y)){
+
+							count++;
+							details.insert(pair<int, Player>(count, Z1));
+						}
+						else if (ico_c.getGlobalBounds().contains(pos.x, pos.y)){
+							sozdanie = false;
+						}
 					}
-					else if (ico_kr1.getGlobalBounds().contains(pos.x, pos.y)){
-						count++;
-						details.insert(pair<int, Player>(count, KR1));
-					}
-					else if (ico_z1.getGlobalBounds().contains(pos.x, pos.y)){
+				/*-------------------------------------------------------------------------------------------------------------*/
 
-						count++;
-						details.insert(pair<int, Player>(count, Z1));
+				if (count){
+					for (int i = 1; i <= count; i++){
+						if (event.type == Event::MouseButtonPressed)//если нажата клавиша мыши
+						{
+							if (event.key.code == Mouse::Left)//а именно левая		
+								if (details.at(i).sprite.getGlobalBounds().contains(pos.x, pos.y))//и при этом координата курсора попадает в спрайт
+									N = i;
+							if (event.key.code == Mouse::Right)//добавили удаление по правому клику мыши 
+								if (details.at(i).sprite.getGlobalBounds().contains(pos.x, pos.y)){
+									D = i;
+									ud++;
+								}
+						}
 					}
 				}
-			/*-------------------------------------------------------------------------------------------------------------*/
-
-			if (count){
-				for (int i = 1; i <= count; i++){
-					if (event.type == Event::MouseButtonPressed)//если нажата клавиша мыши
-						if (event.key.code == Mouse::Left)//а именно левая		
-							if (details.at(i).sprite.getGlobalBounds().contains(pos.x, pos.y))//и при этом координата курсора попадает в спрайт
-								N = i;
+				if (D != 0){
+					details.at(D).del = true;
+					D = 0;
 				}
-			}
-			if (N){
+				if (N){
 					if (event.type == Event::MouseButtonPressed)//если нажата клавиша мыши
 						if (event.key.code == Mouse::Left)//а именно левая
 							//a.at(1).fio
@@ -104,27 +144,211 @@ int main()
 						details.at(N).sprite.setColor(Color::Green);//красим спрайт в зеленый 
 						details.at(N).x = pos.x - dX;//двигаем спрайт по Х
 						details.at(N).y = pos.y - dY;//двигаем по Y
-					}			
+					}
+				}
 			}
-		}
 
-		if (count){
-			for (int i = 1; i <= count; i++) details.at(i).update(time); //////////////////
-		}
-		window.clear();
-		window.draw(fon);
-		window.draw(ico_kv1);
-		window.draw(ico_kr1);
-		window.draw(ico_z1);
-		
-		if (count){
-			for (int i = 1; i <= count; i++){		
-				window.draw(details.at(i).sprite);
+			if (count){
+				for (int i = 1; i <= count; i++) details.at(i).update(time); //////////////////
 			}
+			window.clear();
+			window.draw(fon);
+			window.draw(ico_kv1);
+			window.draw(ico_kr1);
+			window.draw(ico_z1); 
+			window.draw(ico_c); 
+			if (count){
+				for (int i = 1; i <= count; i++){
+					if (details.at(i).del == false)
+						window.draw(details.at(i).sprite);
+				}
+			}
+			window.display();
+
+		}//if (sozdanie == true)
+
+		if (sozdanie == false){
+
+			if (f2){
+			
+				setWall(490, 463, 490, 37);// 74||37 426||463
+
+				
+				//тут создание тел спрайтов
+				if (count){
+
+					b2BodyDef bdef;//переменая свойств тела
+					bdef.type = b2_dynamicBody;
+					std::vector<b2Body *>body(count-ud);	
+					b2Body *body3 = World.CreateBody(&bdef);
+					
+					int bb = 0;//индекс элемента ссылки тела
+					double Cx, Cy;
+					//bdef.position.Set(4, 20);
+					//
+					b2RevoluteJointDef rJoint;
+					
+					for (int i = 1; i <= count; i++){
+
+						if (details.at(i).del == false)
+						{
+							details.at(i).BB = bb;
+
+
+							//круг
+							if (details.at(i).t == "kr1"){
+							
+								
+								b2CircleShape circle;
+								details.at(i).sprite.setOrigin(51, 51);
+								circle.m_radius = (102.0/2) / SCALE;// разве тут не 102/2 ? 
+								bdef.position.Set((details.at(i).x +51) / SCALE, (details.at(i).y+51) / SCALE);
+
+								body[bb] = World.CreateBody(&bdef);//CreateBody(&bdef) создаем тело, закидываем в m_world, делаем ссылку на тело
+								body[bb]->CreateFixture(&circle, 1); //прикрепляем фигуру к телу
+
+								body[bb]->SetUserData("Box");
+								bb++;
+
+							}
+
+							//квадрат
+							if (details.at(i).t == "kv1"){
+
+								b2PolygonShape shape;//создаем фигуру
+								shape.SetAsBox(127.0 / SCALE, 127.0 / SCALE); //квадратик
+								bdef.position.Set(details.at(i).x / SCALE, details.at(i).y / SCALE);
+
+								body[bb] = World.CreateBody(&bdef);//CreateBody(&bdef) создаем тело, закидываем в m_world, делаем ссылку на тело
+								body[bb]->CreateFixture(&shape, 1); //прикрепляем фигуру к телу
+								body[bb]->SetUserData("Box");
+								
+
+								bb++;
+								
+								//body[0] = m_world->CreateBody(&bdef);//CreateBody(&bdef) создаем тело, закидываем в m_world, делаем ссылку на тело
+								//body[0]->CreateFixture(&shape, 1); //прикрепляем фигуру к телу
+
+							}
+
+							//соединение отдельно, последние
+							if (details.at(i).t == "z1"){
+
+								b2CircleShape soed;
+								details.at(i).sprite.setOrigin(12.5, 12.5);
+								soed.m_radius = (25.0/2) / SCALE;
+
+								body[bb] = World.CreateBody(&bdef);//CreateBody(&bdef) создаем тело, закидываем в m_world, делаем ссылку на тело
+								body[bb]->CreateFixture(&soed, 1); //прикрепляем фигуру к телу
+								body[bb]->SetUserData("Box");
+
+								//for (int j = 1; j <= count; j++){ 
+								//	if (details.at(j).t != "z1"){
+								//		if (details.at(j).t == "kr1")
+								//			if ((pow((details.at(i).x - (details.at(j).x + 51)), 2) + pow((details.at(i).y - (details.at(j).y+51)), 2)) <= (pow(51.0, 2))){
+								//				//понять в каком месте
+								//				//Cx = (details.at(i).x - details.at(j).x);
+								//				//Cy = (details.at(i).y - details.at(j).y);
+								//				//от середины фигуры до точки
+
+								//				//прикрепиться к тому спрайту (фигуре,телу) шо пересекает
+								//				rJoint.bodyA = body[bb];
+								//				rJoint.bodyA = body[details.at(j).BB];
+								//				//rJoint.localAnchorA.Set(0, 0);
+								//				//rJoint.localAnchorB.Set(0, 0);
+
+								//				//World.CreateJoint(&rJoint);
+								//				/*
+								//				rJoint.bodyA = body2;
+								//				rJoint.bodyB = body3;
+
+								//				rJoint.localAnchorA.Set(4, 10);
+								//				rJoint.localAnchorB.Set(5, 0);
+
+								//				m_world->CreateJoint(&rJoint);//закидываем в m_world соединение
+								//				*/
+								//		}
+
+								//	//	if (details.at(j).getRect ){ ; }//if (враг.getRect().intersects(игрок.getRect())) будет равно истине (true).
+								//	}
+								//}
+
+								bb++;
+								//body[2] = m_world->CreateBody(&bdef);//CreateBody(&bdef) создаем тело, закидываем в m_world, делаем ссылку на тело
+								//body[2]->CreateFixture(&soed, 1); //прикрепляем фигуру к телу
+
+								
+								//найти середину спрайта
+
+								//проверить пересекает ли он другие спрайты (проверка по всем спрайтам)
+
+								//если да
+								//понять в каком месте
+								//прикрепиться к тому спрайту (фигуре,телу) шо пересекает
+								
+							}
+							//b_ground->SetUserData("Box")
+
+						}
+					}
+				}
+
+				f2 = false;
+			}
+
+			sf::Event e;
+			while (window.pollEvent(e))
+			{
+				if (e.type == sf::Event::Closed)
+					window.close();
+			}
+			World.Step(1 / 60.f, 8, 3);
+
+			window.clear();
+			window.draw(fon2);
+
+			X = 0;
+			if (count){
+				for (b2Body* it = World.GetBodyList(); it != 0; it = it->GetNext()){//итератор пробегает по всем телам
+
+					X++;
+					
+					if (it->GetUserData() == "Box")//если это деталька
+					{
+					while (details.at(X).del == true)
+					{
+						X++;
+					}
+					b2Vec2 pos = it->GetPosition();
+					float angle = it->GetAngle();//ugol
+					details.at(X).sprite.setPosition(pos.x*SCALE, pos.y*SCALE);
+					details.at(X).sprite.setRotation(angle*DEG);
+					window.draw(details.at(X).sprite);
+					}
+				}
+			}
+			window.display();
 		}
-		window.display();
 	}
 
+
+
+
 	return 0;
+}
+
+/**********************************************************************/
+void setWall(int x, int y, int w, int h){//половина высоты и ширины 90 px = 3 m => 1.5
+	b2PolygonShape gr;
+	gr.SetAsBox(w / SCALE, h / SCALE); //делим на скил ибо считает в метрах
+
+	b2BodyDef bdef; //определение тела
+	bdef.position.Set(x / SCALE, y / SCALE); //центр в точке
+
+	b2Body *b_ground = World.CreateBody(&bdef); //создали тело
+	b_ground->CreateFixture(&gr, 1);//прикрепили шейп
+
+	//b_ground->SetUserData("Box");
+
 }
 
