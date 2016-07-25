@@ -30,7 +30,7 @@ int main()
 
 	//контейнер details - хранит в себе все созданные детали
 	map<int, Player> details;
-	int count = 0, N = 0, D = 0, X, ud = 0, v = 0;//количество деталей
+	int count = 0, N = 0, D = 0, X, ud = 0, v = 0, cr = 0, cv2 = 0, cv1 = 0;//количество деталей
 	int V[5] = {};
 
 	b2BodyDef bdef;//переменая свойств тела
@@ -217,9 +217,10 @@ int main()
 								body[bb]->CreateFixture(&circle, 1); //прикрепляем фигуру к телу
 
 								body[bb]->SetUserData("Box");
-								v = bb;
+								//body[bb]->SetAngularVelocity(0.5f);
+								//v = bb;
 								bodyV = body[bb];
-								//bodyV->SetAngularVelocity(0.5f);
+								bodyV->SetAngularVelocity(1.0f);
 
 
 								bb++;
@@ -235,7 +236,7 @@ int main()
 								bdef.position.Set((details.at(i).x + 63.5) / SCALE, (details.at(i).y + 63.5) / SCALE);
 
 								body[bb] = World.CreateBody(&bdef);//CreateBody(&bdef) создаем тело, закидываем в m_world, делаем ссылку на тело
-								body[bb]->CreateFixture(&shape, 10); //прикрепляем фигуру к телу
+								body[bb]->CreateFixture(&shape, 1); //прикрепляем фигуру к телу
 								body[bb]->SetUserData("Box");
 
 
@@ -251,6 +252,7 @@ int main()
 
 								b2CircleShape soed;
 								details.at(i).sprite.setOrigin(12.5, 12.5);
+								bdef.position.Set((details.at(i).x + 12.5) / SCALE, (details.at(i).y + 12.5) / SCALE);
 								soed.m_radius = (25.0 / 2) / SCALE;
 
 								body[bb] = World.CreateBody(&bdef);//CreateBody(&bdef) создаем тело, закидываем в m_world, делаем ссылку на тело
@@ -258,6 +260,7 @@ int main()
 								body[bb]->SetUserData("Box");
 								//body[bb]->SetLinearVelocity(Q);
 								//v = bb;
+								v = 0; cv1 = -1; cr = -1;
 								for (int j = 1; j <= count; j++){
 									if (details.at(j).t != "z1"){
 
@@ -268,22 +271,24 @@ int main()
 												Cx = (details.at(i).x - ((details.at(j).x) + 51));
 												Cy = (details.at(i).y - ((details.at(j).y) + 51));
 												//от середины фигуры до точки
-
-
+												V[v] = j;
+												v++;
 												//прикрепиться к тому спрайту (фигуре,телу) шо пересекает
 												jointDef.Initialize(body[details.at(j).BB], body[bb], body[details.at(j).BB]->GetWorldCenter());
 												//jointDef.localAnchorA.Set(0,0);
 												//jointDef.localAnchorB.Set(0, 0);//51  / SCALE
 												World.CreateJoint(&jointDef);
 												//body[bb]->SetAngularVelocity(0.5f);
+												cr = details.at(j).BB;
 											}
 										}
 										else if (details.at(j).t == "kv1"){
 											if ((details.at(i).x >= details.at(j).x) && (details.at(i).y >= details.at(j).y) && (details.at(i).x <= (details.at(j).x + 127)) && (details.at(i).y <= (details.at(j).y + 127))){//понять принадлежность квадрату
 
+												V[v] = j;
+												v++;
 
-
-												if (details.at(i).x >= (details.at(j).x + 63)){
+												if (details.at(i).x <= (details.at(j).x + 30)){//право
 
 													jointDef.Initialize(body[bb], body[details.at(j).BB], body[bb]->GetWorldCenter());
 													jointDef.localAnchorA.Set(0, 0);
@@ -291,7 +296,7 @@ int main()
 													jointDef.localAnchorB.Set(-63.5 / SCALE, 0);//0,0 середина | (0, 63.5/SCALE) - verh/niz | (63.5 / SCALE,0) -levo/pr |
 													World.CreateJoint(&jointDef);
 												}
-												else if (details.at(i).x <= (details.at(j).x + 30)){
+												else if (details.at(i).x >= (details.at(j).x + 63)){//лево
 
 													jointDef.Initialize(body[bb], body[details.at(j).BB], body[bb]->GetWorldCenter());
 													jointDef.localAnchorA.Set(0, 0);
@@ -299,13 +304,14 @@ int main()
 													jointDef.localAnchorB.Set(63.5 / SCALE, 0);//0,0 середина | (0, 63.5/SCALE) - verh/niz | (63.5 / SCALE,0) -levo/pr |
 													World.CreateJoint(&jointDef);
 												}
-												else if (details.at(i).y >= (details.at(j).y + 63)){
+												else if (details.at(i).y <= (details.at(j).y + 30)){//низ
 
 													jointDef.Initialize(body[bb], body[details.at(j).BB], body[bb]->GetWorldCenter());
 													jointDef.localAnchorA.Set(0, 0);
 
 													jointDef.localAnchorB.Set(0, -63.5 / SCALE);//0,0 середина | (0, 63.5/SCALE) - verh/niz | (63.5 / SCALE,0) -levo/pr |
 													World.CreateJoint(&jointDef);
+
 
 													/*//кр+кв
 													jointDef.Initialize(body[v], body[details.at(j).BB], body[v]->GetWorldCenter());
@@ -315,13 +321,14 @@ int main()
 													World.CreateJoint(&jointDef);*/
 
 												}
-												else if (details.at(i).y <= (details.at(j).y + 30)){
+												else if (details.at(i).y >= (details.at(j).y + 63)){//верх
 
 													jointDef.Initialize(body[bb], body[details.at(j).BB], body[bb]->GetWorldCenter());
 													jointDef.localAnchorA.Set(0, 0);
 
 													jointDef.localAnchorB.Set(0, 63.5 / SCALE);//0,0 середина | (0, 63.5/SCALE) - verh/niz | (63.5 / SCALE,0) -levo/pr |
 													World.CreateJoint(&jointDef);
+													cv1 = details.at(j).BB;
 												}
 
 												//прикрепиться к тому спрайту (фигуре,телу) шо пересекает
@@ -333,7 +340,19 @@ int main()
 												//пришиться
 											}
 										}
+
 									}
+
+
+
+
+								}
+								if (cv1 != -1 && cr != -1){
+									jointDef.Initialize(body[cr], body[cv1], body[cr]->GetWorldCenter());
+									jointDef.localAnchorA.Set(0, 0);
+
+									jointDef.localAnchorB.Set(0, 63.5 / SCALE);//0,0 середина | (0, 63.5/SCALE) - verh/niz | (63.5 / SCALE,0) -levo/pr |
+									World.CreateJoint(&jointDef);
 
 								}
 
@@ -366,6 +385,63 @@ int main()
 								World.CreateJoint(&jointDef);
 								}
 								}*/
+								////if (v > 1){
+								////	cr = 0;
+								////	cv1 = -1;
+								////	cv2 = -1;
+								////	for (int ii = 1; ii <= v; ii++)
+								////	{
+								////		if (details.at(ii).t == "kr1"){
+								////			cr = details.at(ii).BB;
+								////		}
+								////		if (cv1 == -1){
+								////		if (details.at(ii).t == "kv1"){
+								////			cv1 = details.at(ii).BB;
+								////		}
+								////		}
+								////		else if (details.at(ii).t == "kv1"){
+								////			cv2 = details.at(ii).BB;
+								////		}
+								////	}
+
+								////	if (cv2 == -1){
+								////		jointDef.Initialize(body[cr], body[cv1], body[cr]->GetWorldCenter());
+								////		jointDef.localAnchorA.Set(0, 0);
+
+								////		jointDef.localAnchorB.Set(0, 63.5 / SCALE);//0,0 середина | (0, 63.5/SCALE) - verh/niz | (63.5 / SCALE,0) -levo/pr |
+								////		World.CreateJoint(&jointDef);
+								////	}
+								////	else{/*
+								////	
+								////		jointDef.Initialize(body[cv1], body[cv2], body[cv1]->GetWorldCenter());
+								////		jointDef.localAnchorA.Set(-63.5 / SCALE, 0);
+
+								////		jointDef.localAnchorB.Set(63.5 / SCALE, 0);//0,0 середина | (0, 63.5/SCALE) - verh/niz | (63.5 / SCALE,0) -levo/pr |
+								////		World.CreateJoint(&jointDef);
+
+								////		jointDef.Initialize(body[cv1], body[cv2], body[cv1]->GetWorldCenter());
+								////		jointDef.localAnchorA.Set(-63.5 / SCALE, 10/ SCALE);
+
+								////		jointDef.localAnchorB.Set(63.5 / SCALE, 10/ SCALE);//0,0 середина | (0, 63.5/SCALE) - verh/niz | (63.5 / SCALE,0) -levo/pr |
+								////		World.CreateJoint(&jointDef);
+								////		*/
+								////		/*
+								////					jointDef.Initialize(body[bb], body[details.at(j).BB], body[bb]->GetWorldCenter());
+								////					jointDef.localAnchorA.Set(0, 0);
+
+								////					jointDef.localAnchorB.Set(-63.5 / SCALE, 0);//0,0 середина | (0, 63.5/SCALE) - verh/niz | (63.5 / SCALE,0) -levo/pr |
+								////					World.CreateJoint(&jointDef);
+								////				}
+								////				else if (details.at(i).x >= (details.at(j).x + 63)){//лево
+
+								////					jointDef.Initialize(body[bb], body[details.at(j).BB], body[bb]->GetWorldCenter());
+								////					jointDef.localAnchorA.Set(0, 0);
+
+								////					jointDef.localAnchorB.Set(63.5 / SCALE, 0);//0,0 середина | (0, 63.5/SCALE) - verh/niz | (63.5 / SCALE,0) -levo/pr |
+								////					World.CreateJoint(&jointDef);
+								////		*/
+								////	}
+								////}
 
 							}
 							//b_ground->SetUserData("Box")
@@ -388,24 +464,26 @@ int main()
 
 			window.clear();
 			window.draw(fon2);
-			bodyV->SetAngularVelocity(0.5f);
-			X = 0;
+			//bodyV->SetAngularVelocity(0.5f);
+			X = count;
 			if (count){
 				for (b2Body* it = World.GetBodyList(); it != 0; it = it->GetNext()){//итератор пробегает по всем телам
 
-					X++;
+
 
 					if (it->GetUserData() == "Box")//если это деталька
 					{
+
 						while (details.at(X).del == true)
 						{
-							X++;
+							X--;
 						}
 						b2Vec2 pos = it->GetPosition();
 						float angle = it->GetAngle();//ugol
 						details.at(X).sprite.setPosition(pos.x*SCALE, pos.y*SCALE);
 						details.at(X).sprite.setRotation(angle*DEG);
 						window.draw(details.at(X).sprite);
+						X--;
 					}
 				}
 			}
